@@ -1,220 +1,213 @@
 import streamlit as st
 import pandas as pd
 import random
-import string
 
 # 1. Configuração de Arquitetura de Games Executiva
 st.set_page_config(
-    page_title="LiteraQuest IA | Gamified Reading", 
+    page_title="LiteraQuest IA | Advanced Evolution", 
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# 🎨 UI/UX REALISTA: CORREÇÃO TOTAL DO MODO ESCURO (CORPO E BARRA LATERAL)
+# 🎨 UI/UX REALISTA: TEMA ESCURO E PALETA DE ANALISTA LOGICO
 st.markdown("""
 <style>
-    /* 1. Força o fundo escuro corporativo na página inteira e remove o branco */
-    .stApp {
-        background-color: #0D1117 !important;
-        color: #FFFFFF !important;
+    .stApp { background-color: #0D1117 !important; color: #FFFFFF !important; }
+    h1, h2, h3, h4, p, label, .stMarkdown { color: #FFFFFF !important; }
+    .stTextInput input, .stTextArea textarea, .stSelectbox div {
+        background-color: #161B22 !important; color: #FFFFFF !important;
+        border: 1px solid #30363D !important; border-radius: 6px !important;
     }
-    
-    /* 2. CORREÇÃO DA TELA DO LADO: Força a Barra Lateral a ficar escura profunda */
-    [data-testid="stSidebar"] {
-        background-color: #0D1117 !important;
-        border-right: 1px solid #30363D !important;
-    }
-    
-    /* Força os textos de métricas e labels dentro da barra lateral a ficarem brancos e nítidos */
-    [data-testid="stSidebar"] .stMarkdown, 
-    [data-testid="stSidebar"] label, 
-    [data-testid="stSidebar"] p,
-    [data-testid="stSidebar"] h1,
-    [data-testid="stSidebar"] h2,
-    [data-testid="stSidebar"] h3 {
-        color: #FFFFFF !important;
-    }
-    
-    /* Ajuste específico para os blocos de Money/XP (Metrics) ficarem visíveis na barra lateral */
-    [data-testid="stSidebar"] [data-testid="stMetricValue"] {
-        color: #58A6FF !important;
-        font-weight: bold !important;
-    }
-    [data-testid="stSidebar"] [data-testid="stMetricLabel"] {
-        color: #8B949E !important;
-    }
-    
-    /* 3. Customização dos textos principais do corpo */
-    h1, h2, h3, h4, p, label, .stMarkdown {
-        color: #FFFFFF !important;
-    }
-    
-    /* 4. Input de texto estilizado em modo hacker */
-    .stTextInput input, .stTextArea textarea {
-        background-color: #161B22 !important;
-        color: #FFFFFF !important;
-        border: 1px solid #30363D !important;
-        border-radius: 6px !important;
-    }
-
-    /* 5. Cartão de Quest Executivo Azul */
     .quest-card {
-        background-color: #161B22;
-        border: 2px solid #58A6FF;
-        padding: 20px;
-        border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-        margin-bottom: 20px;
+        background-color: #161B22; border: 2px solid #58A6FF;
+        padding: 20px; border-radius: 12px; margin-bottom: 20px;
+    }
+    .avatar-preview {
+        background-color: #161B22; border: 1px dashed #58A6FF;
+        padding: 10px; border-radius: 8px; text-align: center; margin-top: 10px;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# --- ESTRUTURA DE DADOS DO JOGADOR (SESSION STATE) ---
-if "xp_total" not in st.session_state:
-    st.session_state.xp_total = 0
-if "moedas_holding" not in st.session_state:
-    st.session_state.moedas_holding = 0
-if "tempo_gasto_tela" not in st.session_state:
-    st.session_state.tempo_gasto_tela = 0.0
-if "diario_leitura" not in st.session_state:
-    st.session_state.diario_leitura = []
+# --- 📚 BANCO DE DADOS DE QUESTS BÍBLICAS ---
+QUESTS_BANCO = [
+    {
+        "id": 1,
+        "titulo": "📜 QUEST 1: A Sabedoria de Salomão",
+        "versiculo": '"Filho meu, ouve a instrução de teu pai e não deixes o ensino de tua mãe..." (Provérbios 1:8)',
+        "pergunta": "O que Provérbios 1:8 diz para o filho não deixar?",
+        "opcoes": ["A fofoca da sala", "O ensino de tua mãe", "Os jogos de computador", "A busca por notas"],
+        "correta": "O ensino de tua mãe",
+        "xp": 50, "moedas": 10
+    },
+    {
+        "id": 2,
+        "titulo": "🛡️ QUEST 2: A Âncora do Pastor",
+        "versiculo": '"O Senhor é o meu pastor, nada me faltará." (Salmo 23:1)',
+        "pergunta": "Qual é a consequência direta do Senhor ser o seu pastor, segundo o Salmo?",
+        "opcoes": ["Ficar muito cansado", "Nada me faltará", "Ganhar muitos pontos de XP", "Vencer todas as fofocas"],
+        "correta": "Nada me faltará",
+        "xp": 60, "moedas": 15
+    },
+    {
+        "id": 3,
+        "titulo": "⚔️ QUEST 3: A Armadura da Mente",
+        "versiculo": '"Sobre tudo o que se deve guardar, guarda o teu coração, porque dele procedem as fontes da vida." (Provérbios 4:23)',
+        "pergunta": "Por que você deve guardar o seu coração acima de tudo?",
+        "opcoes": ["Porque dele procedem as fontes da vida", "Para tirar nota 10 na escola", "Para impressionar a manada", "Para programar mais rápido"],
+        "correta": "Porque dele procedem as fontes da vida",
+        "xp": 70, "moedas": 20
+    }
+]
 
-# --- 📐 PAINEL LATERAL: CONTROLADORA E STATUS DO PLAYER ---
-st.sidebar.title("LiteraQuest AI 🛡️")
-st.sidebar.caption("Ecossistema de Inovação | Desenvolvido por Kaleb Machado")
+# --- ⚙️ INICIALIZAÇÃO DE VARIÁVEIS DE ESTADO (SESSION STATE) ---
+if "xp_total" not in st.session_state: st.session_state.xp_total = 0
+if "moedas_holding" not in st.session_state: st.session_state.moedas_holding = 0
+if "tempo_gasto_tela" not in st.session_state: st.session_state.tempo_gasto_tela = 0.0
+if "diario_leitura" not in st.session_state: st.session_state.diario_leitura = []
+if "quest_atual_idx" not in st.session_state: st.session_state.quest_atual_idx = 0
+
+# Customização estilo Roblox salvas no estado para não sumirem no rerun
+if "avatar_chapeu" not in st.session_state: st.session_state.avatar_chapeu = "Nenhum"
+if "avatar_armadura" not in st.session_state: st.session_state.avatar_armadura = "Traje Inicial"
+if "avatar_item" not in st.session_state: st.session_state.avatar_item = "Nenhum"
+
+# --- 📐 BARRA LATERAL: CUSTOMIZAÇÃO DE AVATAR (ESTILO ROBLOX) e STATUS ---
+st.sidebar.title("LiteraQuest IA 🛡️")
+st.sidebar.caption("Ecossistema de Inovação | Kaleb Machado")
 st.sidebar.markdown("---")
 
-# MENU DE NAVEGAÇÃO SEGURO (Substitui as abas que davam bug no Chrome)
-menu_navegacao = st.sidebar.selectbox(
-    "Navegar pelo Painel:",
-    ["⚔️ Quests Ativas", "💎 Loja de Recompensas"]
+menu_navegacao = st.sidebar.selectbox("Navegar pelo Painel:", ["⚔️ Quests Ativas", "💎 Loja de Recompensas"])
+st.sidebar.markdown("---")
+
+# 👤 CENTRAL DE CUSTOMIZAÇÃO DO PERSONAGEM (ROBLOX STYLE)
+st.sidebar.subheader("🦊 Customizar seu Avatar")
+st.session_state.avatar_chapeu = st.sidebar.selectbox(
+    "Chapéu / Elmo:", 
+    ["Nenhum", "Capacete de Cavaleiro", "Coroa de Salomão", "Boné Cyberpunk"],
+    index=["Nenhum", "Capacete de Cavaleiro", "Coroa de Salomão", "Boné Cyberpunk"].index(st.session_state.avatar_chapeu)
 )
+st.session_state.avatar_armadura = st.sidebar.selectbox(
+    "Armadura / Traje:", 
+    ["Traje Inicial", "Cota de Malha Medieval", "Manto de Profeta", "Armadura de Kevlar"],
+    index=["Traje Inicial", "Cota de Malha Medieval", "Manto de Profeta", "Armadura de Kevlar"].index(st.session_state.avatar_armadura)
+)
+st.session_state.avatar_item = st.sidebar.selectbox(
+    "Item de Mão / Arma:", 
+    ["Nenhum", "Espada da Verdade", "Pergaminho Antigo", "Notebook da Holding"],
+    index=["Nenhum", "Espada da Verdade", "Pergaminho Antigo", "Notebook da Holding"].index(st.session_state.avatar_item)
+)
+
+# Bloco Visual do Equipamento do Player
+st.sidebar.markdown('<div class="avatar-preview"><b>EQUIPAMENTO ATUAL</b><br>'
+                   f'🎩 {st.session_state.avatar_chapeu}<br>'
+                   f'🛡️ {st.session_state.avatar_armadura}<br>'
+                   f'⚔️ {st.session_state.avatar_item}</div>', unsafe_allow_html=True)
+
 st.sidebar.markdown("---")
+st.sidebar.subheader("📊 Status")
+st.sidebar.metric(label="Pontos de XP", value=f"{st.session_state.xp_total} XP")
+st.sidebar.metric(label="Moedas da Holding", value=f"MH$ {st.session_state.moedas_holding}")
 
-st.sidebar.subheader("👤 Status do Player")
-st.sidebar.metric(label="Pontos de XP Acumulados", value=f"{st.session_state.xp_total} XP")
-st.sidebar.metric(label="Moedas da Holding 💰", value=f"MH$ {st.session_state.moedas_holding}")
-
-# Trava Antivício Física na Barra Lateral
-limite_diario = 60.0  # Limite saudável
+# Trava Antivício Física
+limite_diario = 60.0
 tempo_restante = limite_diario - st.session_state.tempo_gasto_tela
-st.sidebar.markdown("---")
-st.sidebar.subheader("⏳ Monitor Antivício Temporal")
-st.sidebar.write(f"Tempo Consumido de Tela: **{st.session_state.tempo_gasto_tela:.1f} min** / {limite_diario} min")
-
 if tempo_restante <= 0:
-    st.sidebar.error("🚨 TRAVA ANTIVÍCIO ATIVADA! Limite atingido. Vá meditar offline.")
+    st.sidebar.error("🚨 TRAVA ANTIVÍCIO ATIVADA!")
     trava_bloqueio = True
 else:
-    st.sidebar.success(f"Janela de Foco: **{tempo_restante:.1f} min restantes**")
+    st.sidebar.success(f"Foco Seguro: {tempo_restante:.1f} min")
     trava_bloqueio = False
 
-st.sidebar.markdown("---")
-st.sidebar.info("**Salmo 23:1**\n\n\"O Senhor é o meu pastor, nada me faltará.\" 🙏")
-
-# --- 📊 EXECUÇÃO DAS PÁGINAS BASEADA NA SELEÇÃO DO SIDEBAR ---
+# --- 📊 EXECUÇÃO PRINCIPAL DO ECOSSISTEMA ---
 if menu_navegacao == "⚔️ Quests Ativas":
     st.title("Hub de Leitura Estratégica 📚")
-    st.caption("Suba o nível do seu intelecto e proteja sua mente do vício digital")
+    st.caption("Resolução de problemas quânticos e analíticos através da palavra")
     st.markdown("---")
     
     if trava_bloqueio:
         st.error("🔒 **ACESSO BLOQUEADO PELO SISTEMA ANTIVÍCIO**")
-        st.markdown("""
-        Seu tempo de leitura e exposição digital para este bloco foi esgotado por diretrizes da holding. 
-        O painel de quests será reaberto na próxima janela de foco. Vá descansar a mente!
-        """)
     else:
-        # QUEST DO DIA COM DESIGN PREMIUM INLINE HTML
-        st.markdown("""
+        # Puxa a quest atual baseada no índice do banco de dados
+        q_idx = st.session_state.quest_atual_idx % len(QUESTS_BANCO)
+        quest = QUESTS_BANCO[q_idx]
+        
+        # Renderização do Card de Quest Dinâmico
+        st.markdown(f"""
         <div class="quest-card">
-            <h3 style="color:#58A6FF; margin:0;">📜 QUEST PRINCIPAL: A Sabedoria do Rei Salomão</h3>
-            <p style="color:#8B949E; font-size:13px; margin:5px 0;">Livro de Provérbios | Recompensa: +50 XP | +10 Moedas da Holding</p>
-            <p style="color:#FFFFFF; font-size:14px; margin-top:10px;">"Filho meu, ouve a instrução de teu pai e não deixes o ensino de tua mãe. Porque serão como diadema de graça para a tua cabeça e colares para o teu pescoço." (Provérbios 1:8-9)</p>
+            <h3 style="color:#58A6FF; margin:0;">{quest['titulo']}</h3>
+            <p style="color:#8B949E; font-size:13px; margin:5px 0;">Recompensa: +{quest['xp']} XP | +{quest['moedas']} Moedas</p>
+            <p style="color:#FFFFFF; font-size:15px; margin-top:10px;">{quest['versiculo']}</p>
         </div>
         """, unsafe_allow_html=True)
         
-        # FORMULÁRIO DE INPUT DE LEITURA CORRIGIDO PARA PYTHON 3.14/STREAMLIT ATUAL
-        col_text, col_time = st.columns(2)
-        with col_text:
-            insight = st.text_area("O que você entendeu desse ensinamento? Deixe seu relatório analítico:")
-        with col_time:
-            minutos_leitura = st.number_input("Quantos minutos você passou focado lendo esta quest?", min_value=1.0, value=15.0, step=5.0)
+        # ARTÍMANHA COGNITIVA: Sistema de 4 Escolhas Prontas
+        st.write("### ⚔️ Desafio Lógico da Quest")
+        resposta_usuario = st.radio("Escolha a alternativa correta baseada no versículo acima:", quest["opcoes"])
+        
+        col_input, col_cronometro = st.columns(2)
+        with col_input:
+            insight = st.text_area("Insira o seu relatório analítico de absorção (mínimo 10 caracteres):")
+        with col_cronometro:
+            minutos_leitura = st.number_input("Minutos de foco real dedicados:", min_value=1.0, value=15.0, step=5.0)
             
-        if st.button("Concluir Quest e Injetar Recompensas", type="primary", use_container_width=True):
+        if st.button("Submeter Resposta e Atualizar Ledger", type="primary", use_container_width=True):
             if not insight or len(insight) < 10:
-                st.warning("Seu relatório de leitura está muito curto. Seja mais descritivo na lógica!")
+                st.warning("Relatório de leitura inválido ou muito curto para análise.")
             else:
-                st.session_state.xp_total += 50
-                st.session_state.moedas_holding += 10
-                st.session_state.tempo_gasto_tela += minutos_leitura
-                
-                st.session_state.diario_leitura.append({
-                    "Quest": "A Sabedoria de Salomão",
-                    "Tempo Alocado": f"{minutos_leitura} min",
-                    "Status": "✅ Concluída",
-                    "Insight Gerado": insight[:40] + "..."
-                })
-                st.success("🔥 Quest arquivada! Recompensas computadas no seu perfil.")
-                st.rerun()
+                # Validação exata da resposta correta
+                if resposta_usuario == quest["correta"]:
+                    st.session_state.xp_total += quest["xp"]
+                    st.session_state.moedas_holding += quest["moedas"]
+                    st.session_state.tempo_gasto_tela += minutos_leitura
+                    
+                    st.session_state.diario_leitura.append({
+                        "Quest": quest["titulo"],
+                        "Resultado": "✅ Acertou",
+                        "Tempo": f"{minutos_leitura} min",
+                        "Equipamento": st.session_state.avatar_item
+                    })
+                    st.success(f"🔥 Resposta Correta! +{quest['xp']} XP injetados na holding.")
+                    # Passa para o próximo versículo do banco
+                    st.session_state.quest_atual_idx += 1
+                    st.rerun()
+                else:
+                    st.error("❌ Resposta Incorreta! A lógica do versículo foi violada. Releia com atenção.")
 
-    # --- HISTÓRICO DE LEITURA DO AVATAR ---
+    # Tabela de logs de auditoria
     st.markdown("---")
-    st.write("### 📜 Linha do Tempo de Quests Concluídas")
+    st.write("### 📜 Histórico de Desempenho Tático")
     if st.session_state.diario_leitura:
-        df_leitura = pd.DataFrame(st.session_state.diario_leitura)
-        st.dataframe(df_leitura, use_container_width=True)
+        st.dataframe(pd.DataFrame(st.session_state.diario_leitura), use_container_width=True)
     else:
-        st.caption("Nenhuma leitura documentada no registro atual.")
+        st.caption("Nenhum bloco de dados processado.")
 
 elif menu_navegacao == "💎 Loja de Recompensas":
     st.title("💎 Loja de Recompensas e Valuation Real")
-    st.write("Troque suas Moedas da Holding por prêmios reais e desbloqueios de sabedoria.")
     st.markdown("---")
     
     lp1, lp2, lp3 = st.columns(3)
-    
     with lp1:
-        st.write("### 🥉 Desbloqueio Tático")
-        st.caption("Custo: 50 Moedas")
-        st.markdown("* Acesso a provérbios ocultos\n* Título de 'Estudioso Júnior'")
-        if st.button("Comprar Upgrade 1", key="up1", use_container_width=True):
-            if st.session_state.moedas_holding >= 50:
-                st.session_state.moedas_holding -= 50
-                st.success("Upgrade comprado! Seu nível subiu.")
+        st.write("### 🥉 Item Comum: Elmo Lendário")
+        st.caption("Custo: 30 Moedas")
+        if st.button("Adquirir na Loja", key="up1", use_container_width=True):
+            if st.session_state.moedas_holding >= 30:
+                st.session_state.moedas_holding -= 30
+                st.success("Item comprado! Vá no menu lateral para equipar.")
                 st.rerun()
-            else:
-                st.error("Moedas insuficientes na carteira.")
-                
+            else: st.error("Fundos insuficientes.")
+            
     with lp2:
         st.write("### 🥈 Licença Tempo Extra")
-        st.caption("Custo: 120 Moedas")
-        st.markdown("* **+15 minutos de leitura** na Trava Antivício\n* Desbloqueio de Salmos Complexos")
-        if st.button("Comprar Upgrade 2", key="up2", type="primary", use_container_width=True):
-            if st.session_state.moedas_holding >= 120:
-                st.session_state.moedas_holding -= 120
-                st.session_state.tempo_gasto_tela = max(0.0, st.session_state.tempo_gasto_tela - 15.0)
-                st.success("Licença concedida! Tempo extra liberado.")
+        st.caption("Custo: 100 Moedas")
+        if st.button("Comprar Licença", key="up2", type="primary", use_container_width=True):
+            if st.session_state.moedas_holding >= 100:
+                st.session_state.moedas_holding -= 100
+                st.session_state.tempo_gasto_tela = max(0.0, st.session_state.tempo_gasto_tela - 20.0)
+                st.success("Trava Antivício expandida em +20 minutos!")
                 st.rerun()
-            else:
-                st.error("Moedas insuficientes.")
-                
+            else: st.error("Fundos insuficientes.")
+            
     with lp3:
-        st.write("### 🥇 Prêmio Master Real")
-        st.caption("Custo: 500 Moedas")
-        st.markdown("* **PIX Real de R$ 20,00** (Enviado para o Pix da Mãe)\n* Certificado de Mestre")
-        if st.button("Reivindicar Prêmio Master", key="up3", use_container_width=True):
-            if st.session_state.moedas_holding >= 500:
-                st.success("Parabéns! Requisição enviada ao Kaleb.")
-            else:
-                st.error("Você precisa de 500 moedas.")
 
-# Botão de Reset
-st.markdown("---")
-if st.button("Resetar Plataforma e Zerar Cronômetro", use_container_width=True):
-    st.session_state.xp_total = 0
-    st.session_state.moedas_holding = 0
-    st.session_state.tempo_gasto_tela = 0.0
-    st.session_state.diario_leitura = []
-    st.rerun()
 
