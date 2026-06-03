@@ -3,27 +3,28 @@ import pandas as pd
 
 # 1. Configuração de Arquitetura de Games Executiva
 st.set_page_config(
-    page_title="LiteraQuest IA | Roblox Engine", 
+    page_title="LiteraQuest IA | Clash Edition", 
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# 🎨 UI/UX DE ANALISTA LÓGICO: MODO ESCURO E DETALHES AZUL NEON
+# 🎨 UI/UX CLASH OF CLANS METÁLICO E ESCURO
 st.markdown("""
 <style>
-    .stApp { background-color: #0D1117 !important; color: #FFFFFF !important; }
+    .stApp { background-color: #0B0E14 !important; color: #FFFFFF !important; }
     h1, h2, h3, h4, p, label, .stMarkdown { color: #FFFFFF !important; }
     .stTextInput input, .stTextArea textarea, .stSelectbox div {
-        background-color: #161B22 !important; color: #FFFFFF !important;
-        border: 1px solid #30363D !important; border-radius: 6px !important;
+        background-color: #121824 !important; color: #FFFFFF !important;
+        border: 2px solid #58A6FF !important; border-radius: 8px !important;
     }
     .quest-card {
-        background-color: #161B22; border: 2px solid #58A6FF;
-        padding: 20px; border-radius: 12px; margin-bottom: 20px;
+        background-color: #121824; border: 2px solid #FFCC00;
+        padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(255,204,0,0.1);
+        margin-bottom: 20px;
     }
     .canvas-container {
-        border: 2px solid #58A6FF; border-radius: 12px;
-        background-color: #161B22; padding: 10px; text-align: center;
+        border: 3px solid #FFCC00; border-radius: 12px;
+        background-color: #0F1622; padding: 5px; text-align: center;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -32,17 +33,15 @@ st.markdown("""
 QUESTS_BANCO = [
     {
         "id": 1,
-        "titulo": "📜 QUEST 1: A Sabedoria de Salomão",
+        "titulo": "⚔️ CLAN QUEST 1: A Sabedoria do Rei Salomão",
         "versiculo": '"Filho meu, ouve a instrução de teu pai e não deixes o ensino de tua mãe..." (Provérbios 1:8)',
-        "pergunta": "O que Provérbios 1:8 dita para o filho não abandonar?",
         "opcoes": ["A fofoca da sala de aula", "O ensino de tua mãe", "Os jogos de computador", "A busca por status da manada"],
         "correta": "O ensino de tua mãe", "xp": 50, "moedas": 10
     },
     {
         "id": 2,
-        "titulo": "🛡️ QUEST 2: A Âncora do Pastor",
+        "titulo": "🛡️ CLAN QUEST 2: A Fortaleza do Pastor",
         "versiculo": '"O Senhor é o meu pastor, nada me faltará." (Salmo 23:1)',
-        "pergunta": "Qual é a consequência lógica e direta descrita no Salmo?",
         "opcoes": ["Ficar muito cansado na escola", "Nada me faltará", "Ganhar muitos pontos de XP", "Vencer todas as intrigas"],
         "correta": "Nada me faltará", "xp": 60, "moedas": 15
     }
@@ -55,165 +54,194 @@ if "tempo_gasto_tela" not in st.session_state: st.session_state.tempo_gasto_tela
 if "diario_leitura" not in st.session_state: st.session_state.diario_leitura = []
 if "quest_atual_idx" not in st.session_state: st.session_state.quest_atual_idx = 0
 
-# Estado estável de customização do avatar
-if "item_chapeu" not in st.session_state: st.session_state.item_chapeu = "Boné Cyber"
-if "item_traje" not in st.session_state: st.session_state.item_traje = "Camisa Floral"
-if "item_mao" not in st.session_state: st.session_state.item_mao = "Notebook"
+# Variáveis de Nível do Vilarejo Clash Style
+if "nivel_heroi" not in st.session_state: st.session_state.nivel_heroi = 1
+if "tipo_heroi" not in st.session_state: st.session_state.tipo_heroi = "Rei Bárbaro"
+if "nivel_centro" not in st.session_state: st.session_state.nivel_centro = 1
 
-# --- 📐 BARRA LATERAL: CUSTOMIZAÇÃO DO AVATAR E STATUS ---
-st.sidebar.title("LiteraQuest AI 🛡️")
-st.sidebar.caption("Ecossistema de Inovação | Kaleb Machado")
+# --- 📐 BARRA LATERAL: QUARTEL DE UPGRADES DA VILA ---
+st.sidebar.title("LiteraQuest: Clash IA 🏰")
+st.sidebar.caption("Centro de Vila da Holding | Kaleb Machado")
 st.sidebar.markdown("---")
 
-menu_navegacao = st.sidebar.selectbox("Navegar pelo Painel:", ["⚔️ Quests Ativas", "💎 Loja de Recompensas"])
+menu_navegacao = st.sidebar.selectbox("Navegar pelo Vilarejo:", ["⚔️ Atacar Quests", "🛡️ Quartel de Upgrades"])
 st.sidebar.markdown("---")
 
-# 🦊 PAINEL ROBLOX: AL Altera o visual do boneco em tempo real
-st.sidebar.subheader("🦊 Customizar Avatar")
-st.session_state.item_chapeu = st.sidebar.selectbox("Acessório de Cabeça:", ["Nenhum", "Boné Cyber", "Coroa de Ouro", "Elmo de Ferro"], index=["Nenhum", "Boné Cyber", "Coroa de Ouro", "Elmo de Ferro"].index(st.session_state.item_chapeu))
-st.session_state.item_traje = st.sidebar.selectbox("Camisa / Traje:", ["Padrão", "Camisa Floral", "Manto Branco", "Armadura Azul"], index=["Padrão", "Camisa Floral", "Manto Branco", "Armadura Azul"].index(st.session_state.item_traje))
-st.session_state.item_mao = st.sidebar.selectbox("Equipar Item de Mão:", ["Nenhum", "Notebook", "Espada Laser", "Pergaminho"], index=["Nenhum", "Notebook", "Espada Laser", "Pergaminho"].index(st.session_state.item_mao))
-
+# 🏰 STATUS DO CENTRO DE VILA DO INTROVERTIDO ANALISTA
+st.sidebar.subheader("👑 Seus Heróis e Defesas")
+st.sidebar.write(f"🏰 Centro de Vila: **Nível {st.session_state.nivel_centro}**")
+st.sidebar.write(f"🦸‍♂️ Herói Ativo: **{st.session_state.tipo_heroi} (Nv. {st.session_state.nivel_heroi})**")
 st.sidebar.markdown("---")
-st.sidebar.subheader("📊 Status do Perfil")
-st.sidebar.metric(label="Pontos de XP", value=f"{st.session_state.xp_total} XP")
-st.sidebar.metric(label="Moedas da Holding", value=f"MH$ {st.session_state.moedas_holding}")
 
-# Trava Antivício
+st.sidebar.subheader("💰 Recursos do Clã")
+st.sidebar.metric(label="Elixir de XP Acumulado", value=f"{st.session_state.xp_total} XP")
+st.sidebar.metric(label="Ouro da Holding 🟡", value=f"MH$ {st.session_state.moedas_holding}")
+
+# Monitor Antivício (Trava de Escudo de Proteção do Clã)
 limite_diario = 60.0
 tempo_restante = limite_diario - st.session_state.tempo_gasto_tela
 trava_bloqueio = tempo_restante <= 0
 
 st.sidebar.markdown("---")
+if trava_bloqueio:
+    st.sidebar.error("🚨 ESCUDO QUEBRADO! Sistema antivício ativado. Vá descansar.")
+else:
+    st.sidebar.success(f"🛡️ Escudo do Clã Ativo: {tempo_restante:.1f} min")
+
 st.sidebar.info("**Salmo 23:1**\n\n\"O Senhor é o meu pastor, nada me faltará.\" 🙏")
 
-# --- 🦾 MOTOR GRÁFICO ROBLOX ENGINE (HTML5 CANVAS INTERATIVO + LOOP DE ANIMAÇÃO) ---
-# Cores dinâmicas injetadas via Python diretamente no esqueleto JavaScript do navegador
-cor_tronco = "#0056B3" if st.session_state.item_traje == "Armadura Azul" else ("#D1E8FF" if st.session_state.item_traje == "Manto Branco" else ("#FF4136" if st.session_state.item_traje == "Camisa Floral" else "#333333"))
-cor_chapeu = "#FFDC00" if st.session_state.item_chapeu == "Coroa de Ouro" else ("#AAAAAA" if st.session_state.item_chapeu == "Elmo de Ferro" else ("#0074D9" if st.session_state.item_chapeu == "Boné Cyber" else "rgba(0,0,0,0)"))
+# --- 🦾 CLASH ISOMETRIC GRAPHICS ENGINE (HTML5 CANVAS ISOMÉTRICO 2.5D) ---
+tipo_h = st.session_state.tipo_heroi
+nv_h = st.session_state.nivel_heroi
+nv_c = st.session_state.nivel_centro
 
-html_motor_roblox = f"""
+html_motor_clash = f"""
 <div style="text-align: center;">
-    <canvas id="robloxStage" width="400" height="260" style="background:#161B22; border-radius:10px;"></canvas>
+    <canvas id="clashStage" width="400" height="260" style="background:#1B2616; border-radius:10px;"></canvas>
     <script>
-        const canvas = document.getElementById('robloxStage');
+        const canvas = document.getElementById('clashStage');
         const ctx = canvas.getContext('2d');
-        let tick = 0;
+        let frame = 0;
 
-        function renderLoop() {{
+        function desenharVilaIsometria() {{
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            tick += 0.15; // Velocidade da caminhada
-
-            // Lógica matemática do balanço das pernas e braços (Efeito Andando do Roblox)
-            let balanco_bracos = Math.sin(tick) * 20;
-            let balanco_pernas = Math.cos(tick) * 25;
+            frame += 0.05;
 
             ctx.save();
-            ctx.translate(canvas.width / 2, canvas.height / 2 + 10);
-
-            // 1. PERNA ESQUERDA (Bloquinhos característicos do Roblox)
-            ctx.save();
-            ctx.translate(-14, 25);
-            ctx.rotate(balanco_pernas * Math.PI / 180);
-            ctx.fillStyle = "#111111";
-            ctx.fillRect(-10, 0, 18, 45);
-            ctx.restore();
-
-            // 2. PERNA DIREITA
-            ctx.save();
-            ctx.translate(14, 25);
-            ctx.rotate(-balanco_pernas * Math.PI / 180);
-            ctx.fillStyle = "#111111";
-            ctx.fillRect(-8, 0, 18, 45);
-            ctx.restore();
-
-            // 3. TRONCO QUADRADÃO ESTILO ROBLOX
-            ctx.fillStyle = "{cor_tronco}";
-            ctx.fillRect(-24, -40, 48, 65);
-
-            // 4. CABEÇA ROBLOX CLÁSSICA (Amarela e quadrada com juntas de pescoço)
-            ctx.fillStyle = "#FFD1A4";
-            ctx.fillRect(-16, -76, 32, 32);
+            // Centraliza e rotaciona o plano para criar o efeito Isométrico 3D do Clash
+            ctx.translate(canvas.width / 2, 60);
             
-            // Rostinho sorridente clássico do Roblox
-            ctx.fillStyle = "#000000";
-            ctx.fillRect(-10, -64, 4, 4); // Olho esquerdo
-            ctx.fillRect(6, -64, 4, 4);  // Olho direito
+            // Desenha as linhas da grade de grama isométrica
+            ctx.strokeStyle = "#24341E";
+            ctx.lineWidth = 1;
+            for(let i = -4; i <= 4; i++) {{
+                // Linhas diagonais esquerda-direita
+                ctx.beginPath();
+                ctx.moveTo(i * 40 - 160, 100 + i * 20);
+                ctx.lineTo(i * 40 + 160, 200 + i * 20);
+                ctx.stroke();
+            }}
+
+            // 1. DESENHAR CENTRO DE VILA (No topo do layout isométrico)
+            ctx.fillStyle = "#4A525A";
             ctx.beginPath();
-            ctx.arc(0, -52, 6, 0, Math.PI); // Sorriso
-            ctx.stroke();
+            ctx.moveTo(0, 40);
+            ctx.lineTo(50, 65);
+            ctx.lineTo(0, 90);
+            ctx.lineTo(-50, 65);
+            ctx.fill();
+            
+            // Paredes do Centro de Vila
+            ctx.fillStyle = "#2B303A";
+            ctx.beginPath();
+            ctx.moveTo(-50, 65);
+            ctx.lineTo(0, 90);
+            ctx.lineTo(0, 130);
+            ctx.lineTo(-50, 105);
+            ctx.fill();
+            
+            ctx.fillStyle = "#3F444E";
+            ctx.beginPath();
+            ctx.moveTo(0, 90);
+            ctx.lineTo(50, 65);
+            ctx.lineTo(50, 105);
+            ctx.lineTo(0, 130);
+            ctx.fill();
+            
+            // Telhado Vermelho do CV do Clash
+            ctx.fillStyle = "#A62626";
+            ctx.beginPath();
+            ctx.moveTo(0, 20);
+            ctx.lineTo(40, 45);
+            ctx.lineTo(0, 65);
+            ctx.lineTo(-40, 45);
+            ctx.fill();
 
-            // CUSTOMIZAÇÃO DO CHAPÉU
-            if ("{st.session_state.item_chapeu}" !== "Nenhum") {{
-                ctx.fillStyle = "{cor_chapeu}";
-                ctx.fillRect(-20, -84, 40, 10); // Base do chapéu
-                ctx.fillRect(-12, -96, 24, 14); // Topo do chapéu
+            // Texto do Nível do CV
+            ctx.fillStyle = "#FFFFFF";
+            ctx.font = "bold 10px sans-serif";
+            ctx.fillText("CV {nv_c}", -12, 100);
+
+            // 2. DESENHAR O HERÓI (No centro da vila, respirando e flutuando levemente)
+            let respiracao = Math.sin(frame) * 5;
+            ctx.translate(0, 140 + respiracao);
+
+            // Base de pedra do herói
+            ctx.fillStyle = "#5E6571";
+            ctx.beginPath();
+            ctx.ellipse(0, 20, 25, 12, 0, 0, 2 * Math.PI);
+            ctx.fill();
+
+            // Corpo do Herói (Design de Guerreiro Isométrico)
+            if ("{tipo_h}" === "Rei Bárbaro") {{
+                ctx.fillStyle = "#D66800"; // Cabelo/Barba amarela
+                ctx.fillRect(-10, -35, 20, 15);
+                ctx.fillStyle = "#8C4F2B"; // Armadura de couro
+                ctx.fillRect(-12, -20, 24, 30);
+                // Espada Gigante de Ouro ao lado
+                ctx.fillStyle = "#FFCC00";
+                ctx.fillRect(14, -30, 6, 40);
+            }} else {{
+                ctx.fillStyle = "#7F3FBF"; // Manto do Grande Guardião
+                ctx.fillRect(-12, -25, 24, 35);
+                ctx.fillStyle = "#FFD1A4"; // Cabeça
+                ctx.fillRect(-8, -40, 16, 16);
+                // Cajado Mágico
+                ctx.fillStyle = "#E5A93C";
+                ctx.fillRect(14, -45, 4, 55);
+                ctx.fillStyle = "#58A6FF"; // Cristal do cajado
+                ctx.fillRect(12, -53, 8, 8);
             }}
 
-            // 5. BRAÇO ESQUERDO (Balançando)
-            ctx.save();
-            ctx.translate(-34, -40);
-            ctx.rotate(-balanco_bracos * Math.PI / 180);
-            ctx.fillStyle = "#FFD1A4";
-            ctx.fillRect(-10, 0, 16, 50);
-            ctx.restore();
-
-            // 6. BRAÇO DIREITO E EQUIPAMENTO DE MÃO
-            ctx.save();
-            ctx.translate(34, -40);
-            ctx.rotate(balanco_bracos * Math.PI / 180);
-            ctx.fillStyle = "#FFD1A4";
-            ctx.fillRect(-6, 0, 16, 50);
-
-            // Item de Mão renderizado exatamente na ponta do braço
-            if ("{st.session_state.item_mao}" === "Notebook") {{
-                ctx.fillStyle = "#58A6FF";
-                ctx.fillRect(2, 35, 20, 15);
-            }} else if ("{st.session_state.item_mao}" === "Espada Laser") {{
-                ctx.fillStyle = "#FF4136";
-                ctx.fillRect(4, 20, 6, 40);
-            }} else if ("{st.session_state.item_mao}" === "Pergaminho") {{
-                ctx.fillStyle = "#FFDC00";
-                ctx.fillRect(2, 30, 12, 22);
-            }}
-            ctx.restore();
+            // Placa do nível do Herói
+            ctx.fillStyle = "#FFCC00";
+            ctx.fillRect(-22, 25, 44, 14);
+            ctx.fillStyle = "#000000";
+            ctx.font = "bold 9px sans-serif";
+            ctx.fillText("LV {nv_h}", -11, 36);
 
             ctx.restore();
-            requestAnimationFrame(renderLoop);
+            requestAnimationFrame(desenharVilaIsometria);
         }}
-        renderLoop();
+        desenharVilaIsometria();
     </script>
 </div>
 """
 
 # --- 📊 EXECUÇÃO PRINCIPAL DO ECOSSISTEMA ---
-if menu_navegacao == "⚔️ Quests Ativas":
-    st.title("Hub de Leitura Estratégica 📚")
+if menu_navegacao == "⚔️ Atacar Quests":
+    st.title("Hub de Ataques de Leitura ⚔️")
     
     c_titulo, c_canvas = st.columns([1.3, 1])
     with c_titulo:
-        st.caption("Resolução de problemas através da absorção analítica de versículos")
-        st.write("### 🤖 Seu Personagem Roblox")
-        st.info("O motor gráfico detectou o seu avatar em movimento contínuo na tela. Altere os trajes e itens no painel do lado para ver a atualização instantânea!")
+        st.caption("Destrua o vício digital coletando recursos reais com a palavra")
+        st.write("### 🏰 Seu Vilarejo em Tempo Real")
+        st.info("Sua vila tática está gerando recursos. Conclua os relatórios analíticos abaixo para pilhar Ouro e Elixir para o seu clã!")
     with c_canvas:
-        # Contêiner robusto do Motor do Avatar
         st.markdown('<div class="canvas-container">', unsafe_allow_html=True)
-        st.components.v1.html(html_motor_roblox, height=270)
+        st.components.v1.html(html_motor_clash, height=270)
         st.markdown('</div>', unsafe_allow_html=True)
         
     st.markdown("---")
     
     if trava_bloqueio:
-        st.error("🔒 **ACESSO BLOQUEADO PELO SISTEMA ANTIVÍCIO**")
+        st.error("🔒 **PROTEÇÃO DO ESCUDO ESGOTADA PELO MONITOR ANTIVÍCIO**")
     else:
         q_idx = st.session_state.quest_atual_idx % len(QUESTS_BANCO)
         quest = QUESTS_BANCO[q_idx]
         
         st.markdown(f"""
         <div class="quest-card">
-            <h3 style="color:#58A6FF; margin:0;">{quest['titulo']}</h3>
-            <p style="color:#8B949E; font-size:13px; margin:5px 0;">Recompensa: +{quest['xp']} XP | +{quest['moedas']} Moedas</p>
+            <h3 style="color:#FFCC00; margin:0;">{quest['titulo']}</h3>
+            <p style="color:#8B949E; font-size:13px; margin:5px 0;">Pilhagem Esperada: +{quest['xp']} Elixir | +{quest['moedas']} Ouro da Holding</p>
             <p style="color:#FFFFFF; font-size:15px; margin-top:10px;">{quest['versiculo']}</p>
         </div>
         """, unsafe_allow_html=True)
+        
+        st.write("### 🎯 Alvo do Ataque: Escolha a alternativa correta:")
+        resposta_usuario = st.radio("Selecione a verdade baseada nas escrituras:", quest["opcoes"])
+        
+        col_text, col_cronometro = st.columns(2)
+        with col_text:
+
         
