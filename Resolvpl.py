@@ -134,8 +134,8 @@ if menu_navegacao == "⚔️ Quests Ativas":
         </div>
         """, unsafe_allow_html=True)
         
-        # FORMULÁRIO DE INPUT DE LEITURA
-        col_text, col_time = st.columns()
+        # FORMULÁRIO DE INPUT DE LEITURA CORRIGIDO PARA PYTHON 3.14/STREAMLIT ATUAL
+        col_text, col_time = st.columns(2)
         with col_text:
             insight = st.text_area("O que você entendeu desse ensinamento? Deixe seu relatório analítico:")
         with col_time:
@@ -217,3 +217,4 @@ if st.button("Resetar Plataforma e Zerar Cronômetro", use_container_width=True)
     st.session_state.tempo_gasto_tela = 0.0
     st.session_state.diario_leitura = []
     st.rerun()
+
