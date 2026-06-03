@@ -10,21 +10,46 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 🎨 UI/UX FORÇADA EM MODO ESCURO E CORES DE ANALISTA
+# 🎨 UI/UX REALISTA: CORREÇÃO TOTAL DO MODO ESCURO (CORPO E BARRA LATERAL)
 st.markdown("""
 <style>
-    /* Força o fundo escuro corporativo na página inteira e remove o branco */
+    /* 1. Força o fundo escuro corporativo na página inteira e remove o branco */
     .stApp {
         background-color: #0D1117 !important;
         color: #FFFFFF !important;
     }
     
-    /* Customização dos textos principais */
+    /* 2. CORREÇÃO DA TELA DO LADO: Força a Barra Lateral a ficar escura profunda */
+    [data-testid="stSidebar"] {
+        background-color: #0D1117 !important;
+        border-right: 1px solid #30363D !important;
+    }
+    
+    /* Força os textos de métricas e labels dentro da barra lateral a ficarem brancos e nítidos */
+    [data-testid="stSidebar"] .stMarkdown, 
+    [data-testid="stSidebar"] label, 
+    [data-testid="stSidebar"] p,
+    [data-testid="stSidebar"] h1,
+    [data-testid="stSidebar"] h2,
+    [data-testid="stSidebar"] h3 {
+        color: #FFFFFF !important;
+    }
+    
+    /* Ajuste específico para os blocos de Money/XP (Metrics) ficarem visíveis na barra lateral */
+    [data-testid="stSidebar"] [data-testid="stMetricValue"] {
+        color: #58A6FF !important;
+        font-weight: bold !important;
+    }
+    [data-testid="stSidebar"] [data-testid="stMetricLabel"] {
+        color: #8B949E !important;
+    }
+    
+    /* 3. Customização dos textos principais do corpo */
     h1, h2, h3, h4, p, label, .stMarkdown {
         color: #FFFFFF !important;
     }
     
-    /* Input de texto estilizado em modo hacker */
+    /* 4. Input de texto estilizado em modo hacker */
     .stTextInput input, .stTextArea textarea {
         background-color: #161B22 !important;
         color: #FFFFFF !important;
@@ -32,7 +57,7 @@ st.markdown("""
         border-radius: 6px !important;
     }
 
-    /* Cartão de Quest Executivo Azul */
+    /* 5. Cartão de Quest Executivo Azul */
     .quest-card {
         background-color: #161B22;
         border: 2px solid #58A6FF;
@@ -110,7 +135,7 @@ if menu_navegacao == "⚔️ Quests Ativas":
         """, unsafe_allow_html=True)
         
         # FORMULÁRIO DE INPUT DE LEITURA
-        col_text, col_time = st.columns([2, 1])
+        col_text, col_time = st.columns()
         with col_text:
             insight = st.text_area("O que você entendeu desse ensinamento? Deixe seu relatório analítico:")
         with col_time:
@@ -192,4 +217,3 @@ if st.button("Resetar Plataforma e Zerar Cronômetro", use_container_width=True)
     st.session_state.tempo_gasto_tela = 0.0
     st.session_state.diario_leitura = []
     st.rerun()
-
