@@ -1,10 +1,10 @@
 import streamlit as st
 import pandas as pd
-import random
+import streamlit.components.v1 as components
 
 # 1. Configuração de Arquitetura de Games Executiva
 st.set_page_config(
-    page_title="LiteraQuest IA | Advanced Evolution", 
+    page_title="LiteraQuest IA | 3D Avatar Engine", 
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -22,9 +22,11 @@ st.markdown("""
         background-color: #161B22; border: 2px solid #58A6FF;
         padding: 20px; border-radius: 12px; margin-bottom: 20px;
     }
-    .avatar-preview {
-        background-color: #161B22; border: 1px dashed #58A6FF;
-        padding: 10px; border-radius: 8px; text-align: center; margin-top: 10px;
+    .canvas-container {
+        border: 2px solid #58A6FF;
+        border-radius: 12px;
+        background-color: #161B22;
+        padding: 10px;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -60,49 +62,37 @@ QUESTS_BANCO = [
     }
 ]
 
-# --- ⚙️ INICIALIZAÇÃO DE VARIÁVEIS DE ESTADO (SESSION STATE) ---
+# --- ⚙️ INICIALIZAÇÃO DE VARIÁVEIS DE ESTADO ---
 if "xp_total" not in st.session_state: st.session_state.xp_total = 0
 if "moedas_holding" not in st.session_state: st.session_state.moedas_holding = 0
 if "tempo_gasto_tela" not in st.session_state: st.session_state.tempo_gasto_tela = 0.0
 if "diario_leitura" not in st.session_state: st.session_state.diario_leitura = []
 if "quest_atual_idx" not in st.session_state: st.session_state.quest_atual_idx = 0
 
-# Customização estilo Roblox salvas no estado
-if "avatar_chapeu" not in st.session_state: st.session_state.avatar_chapeu = "Nenhum"
-if "avatar_armadura" not in st.session_state: st.session_state.avatar_armadura = "Traje Inicial"
-if "avatar_item" not in st.session_state: st.session_state.avatar_item = "Nenhum"
+# Configurações de Rigging salvas na sessão
+if "rig_type" not in st.session_state: st.session_state.rig_type = "R6 (Clássico)"
+if "flex_juntas" not in st.session_state: st.session_state.flex_juntas = 0
 
-# --- 📐 BARRA LATERAL: CUSTOMIZAÇÃO DE AVATAR (ESTILO ROBLOX) E STATUS ---
-st.sidebar.title("LiteraQuest IA 🛡️")
+# --- 📐 BARRA LATERAL: ENGINES DE RIGGING E STATUS ---
+st.sidebar.title("LiteraQuest AI 🛡️")
 st.sidebar.caption("Ecossistema de Inovação | Kaleb Machado")
 st.sidebar.markdown("---")
 
 menu_navegacao = st.sidebar.selectbox("Navegar pelo Painel:", ["⚔️ Quests Ativas", "💎 Loja de Recompensas"])
 st.sidebar.markdown("---")
 
-# 👤 CENTRAL DE CUSTOMIZAÇÃO DO PERSONAGEM (ROBLOX STYLE)
-st.sidebar.subheader("🦊 Customizar seu Avatar")
-st.session_state.avatar_chapeu = st.sidebar.selectbox(
-    "Chapéu / Elmo:", 
-    ["Nenhum", "Capacete de Cavaleiro", "Coroa de Salomão", "Boné Cyberpunk"],
-    index=["Nenhum", "Capacete de Cavaleiro", "Coroa de Salomão", "Boné Cyberpunk"].index(st.session_state.avatar_chapeu)
-)
-st.session_state.avatar_armadura = st.sidebar.selectbox(
-    "Armadura / Traje:", 
-    ["Traje Inicial", "Cota de Malha Medieval", "Manto de Profeta", "Armadura de Kevlar"],
-    index=["Traje Inicial", "Cota de Malha Medieval", "Manto de Profeta", "Armadura de Kevlar"].index(st.session_state.avatar_armadura)
-)
-st.session_state.avatar_item = st.sidebar.selectbox(
-    "Item de Mão / Arma:", 
-    ["Nenhum", "Espada da Verdade", "Pergaminho Antigo", "Notebook da Holding"],
-    index=["Nenhum", "Espada da Verdade", "Pergaminho Antigo", "Notebook da Holding"].index(st.session_state.avatar_item)
+# 🦊 CONFIGURAÇÃO DO RIG DO BONECO (ESTILO IMAGEM ROBLOX)
+st.sidebar.subheader("🦾 Mecânica do Rig 3D")
+st.session_state.rig_type = st.sidebar.radio(
+    "Escolha a estrutura do esqueleto:",
+    ["R6 (Clássico)", "R15 (Articulado)"]
 )
 
-# Bloco Visual do Equipamento do Player
-st.sidebar.markdown('<div class="avatar-preview"><b>EQUIPAMENTO ATUAL</b><br>'
-                   f'🎩 {st.session_state.avatar_chapeu}<br>'
-                   f'🛡️ {st.session_state.avatar_armadura}<br>'
-                   f'⚔️ {st.session_state.avatar_item}</div>', unsafe_allow_html=True)
+# Slider para dobrar os braços/pernas se for R15
+if st.session_state.rig_type == "R15 (Articulado)":
+    st.session_state.flex_juntas = st.sidebar.slider("Dobrar Articulações do Avatar:", 0, 45, 15)
+else:
+    st.session_state.flex_juntas = 0 # R6 fica totalmente travado/rígido
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("📊 Status do Perfil")
@@ -112,28 +102,137 @@ st.sidebar.metric(label="Moedas da Holding", value=f"MH$ {st.session_state.moeda
 # Trava Antivício Física
 limite_diario = 60.0
 tempo_restante = limite_diario - st.session_state.tempo_gasto_tela
-if tempo_restante <= 0:
+trava_bloqueio = tempo_restante <= 0
+
+if trava_bloqueio:
     st.sidebar.error("🚨 TRAVA ANTIVÍCIO ATIVADA!")
-    trava_bloqueio = True
 else:
     st.sidebar.success(f"Foco Seguro: {tempo_restante:.1f} min")
-    trava_bloqueio = False
+
+st.sidebar.markdown("---")
+st.sidebar.info("**Salmo 23:1**\n\n\"O Senhor é o meu pastor, nada me faltará.\" 🙏")
+
+# --- ARTINMANHA DO MOTOR GRÁFICO 3D (HTML5 CANVAS + JAVASCRIPT PROPRIETÁRIO) ---
+# Esse bloco gera um visualizador 3D interativo na tela usando matrizes matemáticas puras no Chrome
+angulo_dobra = st.session_state.flex_juntas
+is_r15 = "true" if st.session_state.rig_type == "R15 (Articulado)" else "false"
+
+html_avatar_3d = f"""
+<div style="text-align: center; font-family: sans-serif; color: #FFFFFF;">
+    <canvas id="robloxCanvas" width="300" height="280" style="background:#161B22; border-radius:10px;"></canvas>
+    <script>
+        const canvas = document.getElementById('robloxCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        function desenharAvatar() {{
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.save();
+            ctx.translate(canvas.width / 2, canvas.height / 2);
+            
+            // 1. Cabeça (Bloco Clássico)
+            ctx.fillStyle = "#FFD1A4"; 
+            ctx.fillRect(-20, -100, 40, 40);
+            // Olhos de óculos escuros de analista
+            ctx.fillStyle = "#000000";
+            ctx.fillRect(-15, -85, 30, 8);
+            
+            // 2. Tronco (Camisa Floral Azul da Holding)
+            ctx.fillStyle = "#58A6FF";
+            ctx.fillRect(-30, -55, 60, 70);
+            ctx.fillStyle = "#FFFFFF";
+            ctx.font = "10px sans-serif";
+            ctx.fillText("{st.session_state.rig_type[:3]}", -10, -15);
+            
+            // 3. Braço Esquerdo
+            ctx.save();
+            ctx.translate(-45, -55);
+            ctx.fillStyle = "#FFD1A4";
+            if ({is_r15}) {{
+                // Simulação de junta R15 dobrando
+                ctx.fillRect(0, 0, 12, 30);
+                ctx.translate(0, 30);
+                ctx.rotate({angulo_dobra} * Math.PI / 180);
+                ctx.fillRect(0, 0, 12, 25);
+            }} else {{
+                // R6 Rígido clássico da imagem
+                ctx.fillRect(0, 0, 12, 55);
+            }}
+            ctx.restore();
+            
+            // 4. Braço Direito
+            ctx.save();
+            ctx.translate(33, -55);
+            ctx.fillStyle = "#FFD1A4";
+            if ({is_r15}) {{
+                ctx.fillRect(0, 0, 12, 30);
+                ctx.translate(0, 30);
+                ctx.rotate(-{angulo_dobra} * Math.PI / 180);
+                ctx.fillRect(0, 0, 12, 25);
+            }} else {{
+                ctx.fillRect(0, 0, 12, 55);
+            }}
+            ctx.restore();
+            
+            // 5. Perna Esquerda
+            ctx.save();
+            ctx.translate(-25, 15);
+            ctx.fillStyle = "#30363D";
+            if ({is_r15}) {{
+                ctx.fillRect(0, 0, 22, 25);
+                ctx.translate(0, 25);
+                ctx.rotate({angulo_dobra} * 0.5 * Math.PI / 180);
+                ctx.fillRect(0, 0, 22, 25);
+            }} else {{
+                ctx.fillRect(0, 0, 22, 50);
+            }}
+            ctx.restore();
+            
+            // 6. Perna Direita
+            ctx.save();
+            ctx.translate(3, 15);
+            ctx.fillStyle = "#30363D";
+            if ({is_r15}) {{
+                ctx.fillRect(0, 0, 22, 25);
+                ctx.translate(0, 25);
+                ctx.rotate(-{angulo_dobra} * 0.5 * Math.PI / 180);
+                ctx.fillRect(0, 0, 22, 25);
+            }} else {{
+                ctx.fillRect(0, 0, 22, 50);
+            }}
+            ctx.restore();
+            
+            ctx.restore();
+        }}
+        desenharAvatar();
+    </script>
+</div>
+"""
 
 # --- 📊 EXECUÇÃO PRINCIPAL DO ECOSSISTEMA ---
 if menu_navegacao == "⚔️ Quests Ativas":
+    
+    # RENDERIZAÇÃO DO AVATAR NO TOPO DO HUB
     st.title("Hub de Leitura Estratégica 📚")
-    st.caption("Resolução de problemas através da absorção analítica de versículos")
+    
+    c_titulo, c_canvas = st.columns([1.5, 1])
+    with c_titulo:
+        st.caption("Resolução de problemas através da absorção analítica de versículos")
+        st.write("Aqui está a simulação estrutural do seu esqueleto em tempo de execução no Chrome:")
+        st.info(f"**Modo Ativo:** Seu personagem está renderizado no formato de malha **{st.session_state.rig_type}**.")
+    with c_canvas:
+        # Injeta o motor gráfico Javascript dentro do contêiner azul do Streamlit
+        st.markdown('<div class="canvas-container">', unsafe_allow_html=True)
+        components.html(html_avatar_3d, height=290)
+        st.markdown('</div>', unsafe_allow_html=True)
+        
     st.markdown("---")
     
     if trava_bloqueio:
         st.error("🔒 **ACESSO BLOQUEADO PELO SISTEMA ANTIVÍCIO**")
-        st.markdown("Seu tempo limite de tela expirou por diretrizes de saúde. Vá descansar a mente.")
     else:
-        # Puxa a quest atual baseada no índice do banco de dados
         q_idx = st.session_state.quest_atual_idx % len(QUESTS_BANCO)
         quest = QUESTS_BANCO[q_idx]
         
-        # Renderização do Card de Quest Dinâmico
         st.markdown(f"""
         <div class="quest-card">
             <h3 style="color:#58A6FF; margin:0;">{quest['titulo']}</h3>
@@ -142,69 +241,7 @@ if menu_navegacao == "⚔️ Quests Ativas":
         </div>
         """, unsafe_allow_html=True)
         
-        # ARTÍMANHA COGNITIVA: Sistema de 4 Escolhas Prontas
         st.write("### ⚔️ Desafio Lógico da Quest")
         resposta_usuario = st.radio("Escolha a alternativa correta baseada no versículo acima:", quest["opcoes"])
         
-        col_input, col_cronometro = st.columns(2)
-        with col_input:
-            insight = st.text_area("Insira o seu relatório analítico de absorção (mínimo 10 caracteres):")
-        with col_time:
-            minutos_leitura = st.number_input("Minutos de foco real dedicados:", min_value=1.0, value=15.0, step=5.0)
-            
-        if st.button("Submeter Resposta e Atualizar Ledger", type="primary", use_container_width=True):
-            if not insight or len(insight) < 10:
-                st.warning("Relatório de leitura inválido ou muito curto para análise.")
-            else:
-                if resposta_usuario == quest["correta"]:
-                    st.session_state.xp_total += quest["xp"]
-                    st.session_state.moedas_holding += quest["moedas"]
-                    st.session_state.tempo_gasto_tela += minutos_leitura
-                    
-                    st.session_state.diario_leitura.append({
-                        "Quest": quest["titulo"],
-                        "Resultado": "✅ Acertou",
-                        "Tempo": f"{minutos_leitura} min",
-                        "Equipamento": st.session_state.avatar_item
-                    })
-                    st.success(f"🔥 Resposta Correta! +{quest['xp']} XP injetados.")
-                    st.session_state.quest_atual_idx += 1
-                    st.rerun()
-                else:
-                    st.error("❌ Resposta Incorreta! A lógica do versículo foi violada. Releia com atenção.")
-
-    # Tabela de logs de auditoria
-    st.markdown("---")
-    st.write("### 📜 Histórico de Desempenho Tático")
-    if st.session_state.diario_leitura:
-        st.dataframe(pd.DataFrame(st.session_state.diario_leitura), use_container_width=True)
-    else:
-        st.caption("Nenhum bloco de dados processado.")
-
-elif menu_navegacao == "💎 Loja de Recompensas":
-    st.title("💎 Loja de Recompensas e Valuation Real")
-    st.write("Troque suas Moedas da Holding por prêmios reais e vantagens de tempo.")
-    st.markdown("---")
-    
-    lp1, lp2, lp3 = st.columns(3)
-    with lp1:
-        st.write("### 🥉 Item Comum: Elmo Lendário")
-        st.caption("Custo: 30 Moedas")
-        if st.button("Adquirir na Loja", key="up1", use_container_width=True):
-            if st.session_state.moedas_holding >= 30:
-                st.session_state.moedas_holding -= 30
-                st.success("Item comprado! Vá no menu lateral para equipar.")
-                st.rerun()
-            else:
-                st.error("Fundos insuficientes.")
-            
-    with lp2:
-        st.write("### 🥈 Licença Tempo Extra")
-        st.caption("Custo: 100 Moedas")
-        if st.button("Comprar Licença", key="up2", type="primary", use_container_width=True):
-            if st.session_state.moedas_holding >= 100:
-                st.session_state.moedas_holding -= 100
-                st.session_state.tempo_gasto_tela = max(0.0, st.session_state.tempo_gasto_tela - 20.0)
-                st.success("Trava Antivício expandida em +20 minutos!")
-
 
