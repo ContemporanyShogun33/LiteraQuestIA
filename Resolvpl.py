@@ -108,21 +108,18 @@ html_motor_clash = f"""
             frame += 0.05;
 
             ctx.save();
-            // Centraliza e rotaciona o plano para criar o efeito Isométrico 3D do Clash
             ctx.translate(canvas.width / 2, 60);
             
-            // Desenha as linhas da grade de grama isométrica
             ctx.strokeStyle = "#24341E";
             ctx.lineWidth = 1;
             for(let i = -4; i <= 4; i++) {{
-                // Linhas diagonais esquerda-direita
                 ctx.beginPath();
                 ctx.moveTo(i * 40 - 160, 100 + i * 20);
                 ctx.lineTo(i * 40 + 160, 200 + i * 20);
                 ctx.stroke();
             }}
 
-            // 1. DESENHAR CENTRO DE VILA (No topo do layout isométrico)
+            // 1. DESENHAR CENTRO DE VILA
             ctx.fillStyle = "#4A525A";
             ctx.beginPath();
             ctx.moveTo(0, 40);
@@ -131,7 +128,6 @@ html_motor_clash = f"""
             ctx.lineTo(-50, 65);
             ctx.fill();
             
-            // Paredes do Centro de Vila
             ctx.fillStyle = "#2B303A";
             ctx.beginPath();
             ctx.moveTo(-50, 65);
@@ -148,7 +144,6 @@ html_motor_clash = f"""
             ctx.lineTo(0, 130);
             ctx.fill();
             
-            // Telhado Vermelho do CV do Clash
             ctx.fillStyle = "#A62626";
             ctx.beginPath();
             ctx.moveTo(0, 20);
@@ -157,43 +152,37 @@ html_motor_clash = f"""
             ctx.lineTo(-40, 45);
             ctx.fill();
 
-            // Texto do Nível do CV
             ctx.fillStyle = "#FFFFFF";
             ctx.font = "bold 10px sans-serif";
             ctx.fillText("CV {nv_c}", -12, 100);
 
-            // 2. DESENHAR O HERÓI (No centro da vila, respirando e flutuando levemente)
+            // 2. DESENHAR O HERÓI
             let respiracao = Math.sin(frame) * 5;
             ctx.translate(0, 140 + respiracao);
 
-            // Base de pedra do herói
             ctx.fillStyle = "#5E6571";
             ctx.beginPath();
             ctx.ellipse(0, 20, 25, 12, 0, 0, 2 * Math.PI);
             ctx.fill();
 
-            // Corpo do Herói (Design de Guerreiro Isométrico)
             if ("{tipo_h}" === "Rei Bárbaro") {{
-                ctx.fillStyle = "#D66800"; // Cabelo/Barba amarela
+                ctx.fillStyle = "#FFCC00"; 
                 ctx.fillRect(-10, -35, 20, 15);
-                ctx.fillStyle = "#8C4F2B"; // Armadura de couro
+                ctx.fillStyle = "#8C4F2B"; 
                 ctx.fillRect(-12, -20, 24, 30);
-                // Espada Gigante de Ouro ao lado
                 ctx.fillStyle = "#FFCC00";
                 ctx.fillRect(14, -30, 6, 40);
             }} else {{
-                ctx.fillStyle = "#7F3FBF"; // Manto do Grande Guardião
+                ctx.fillStyle = "#7F3FBF"; 
                 ctx.fillRect(-12, -25, 24, 35);
-                ctx.fillStyle = "#FFD1A4"; // Cabeça
+                ctx.fillStyle = "#FFD1A4"; 
                 ctx.fillRect(-8, -40, 16, 16);
-                // Cajado Mágico
                 ctx.fillStyle = "#E5A93C";
                 ctx.fillRect(14, -45, 4, 55);
-                ctx.fillStyle = "#58A6FF"; // Cristal do cajado
+                ctx.fillStyle = "#58A6FF"; 
                 ctx.fillRect(12, -53, 8, 8);
             }}
 
-            // Placa do nível do Herói
             ctx.fillStyle = "#FFCC00";
             ctx.fillRect(-22, 25, 44, 14);
             ctx.fillStyle = "#000000";
@@ -243,5 +232,15 @@ if menu_navegacao == "⚔️ Atacar Quests":
         
         col_text, col_cronometro = st.columns(2)
         with col_text:
-
+            insight = st.text_area("Digite o seu pergaminho de insights analíticos (mínimo 10 caracteres):")
+        with col_cronometro:
+            minutos_leitura = st.number_input("Tempo de expedição alocado (minutos):", min_value=1.0, value=15.0, step=5.0)
+            
+        if st.button("Lançar Ataque e Coletar Recursos", type="primary", use_container_width=True):
+            if not insight or len(insight) < 10:
+                st.warning("Seu pergaminho de insight está muito curto para ser validado pelos magos do clã.")
+            else:
+                if resposta_usuario == quest["correta"]:
+                    st.session_state.xp_total += quest["xp"]
+                    st.session_state.moedas_holding += quest["moedas"]
         
